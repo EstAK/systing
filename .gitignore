@@ -23,3 +23,5 @@ flake.lock
 # Local commit-attribution hook injected into the tracked hooks path
 # (and any backup variants it creates); never track these.
 hooks/prepare-commit-msg*
+
+.direnv
