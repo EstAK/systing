@@ -18,35 +18,50 @@
  	eachSystem = nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-linux" ]; 
   in 
   {
-      devShells = eachSystem (
-        system:
-        let
-          pkgs = import nixpkgs {
-            inherit system;
-            config = { allowUnfree = true; };
-          };
-        in
-        {
-          default = pkgs.mkShell {
+    packages = eachSystem (
+      system:
+      let
+        pkgs = import nixpkgs {
+          inherit system;
+          config = { allowUnfree = true; };
+        };
+      in
+      {
+        systing = pkgs.callPackage ./default.nix { };
+        default = self.packages.${system}.systing;
+      }
+    );
+
+    devShells = eachSystem (
+      system:
+      let
+        pkgs = import nixpkgs {
+          inherit system;
+          config = { allowUnfree = true; };
+        };
+      in
+      {
+        default = pkgs.mkShell {
+          inputsFrom = [ self.packages.${system}.systing ];
+
           nativeBuildInputs = with pkgs; [
-            # rustToolchain
-            pkg-config
-            cmake
-            protobuf
-            #clangBpfWrapper
+            cargo
+            rustc
+            rustfmt
+            clippy
           ];
 
           buildInputs = with pkgs; [
-            elfutils     # libelf, libdw - needed by libbpf-sys and blazesym
-            zlib         # needed by libbpf-sys
-            linuxHeaders # kernel headers (asm/, linux/) for BPF compilation
-	    antigravity-cli
+            antigravity-cli
             tmux
           ];
-          };
-        }
-      );
 
-
+          shellHook = ''
+            export CPATH="${pkgs.linuxHeaders}/include:${pkgs.glibc.dev}/include''${CPATH:+:$CPATH}"
+            export SYSTING_BPF_CLANG="${pkgs.llvmPackages.clang-unwrapped}/bin/clang"
+          '';
+        };
+      }
+    );
   };
 }

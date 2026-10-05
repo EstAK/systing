@@ -25,3 +25,5 @@ flake.lock
 hooks/prepare-commit-msg*
 
 .direnv
+result
+result-*
